@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import time
 from dataloader.img_aug import ImgAugTransform
+from dataloader.dataloader import OCRDataset
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -17,7 +18,7 @@ from timm.data.transforms_factory import create_transform
 from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy
 from translate import translate,batch_translate_beam_search
-
+from torchvision import transforms
 
 class Trainer():
     def __init__(self, config, pretrained=True, augmentor=ImgAugTransform()):
@@ -44,7 +45,7 @@ class Trainer():
         self.checkpoint = config['trainer']['checkpoint']
         self.export_weights = config['trainer']['export']
         self.metrics = config['trainer']['metrics']
-
+        self.split = config['split']
         
 
         if pretrained:
@@ -63,17 +64,21 @@ class Trainer():
 
         self.criterion = LabelSmoothingLoss(len(self.vocab), padding_idx=self.vocab.pad, smoothing=0.1)
         
-        transforms = None
+        augm = None
         if self.image_aug:
-            transforms =  augmentor
+            augm =  augmentor
         
         self.img_trans = create_transform(**resolve_data_config(self.model.img_enc.pretrained_cfg, model=self.model.img_enc))
 
-        self.train_gen = self.data_gen('train_{}'.format(self.dataset_name), 
-                self.data_root, self.train_annotation, self.masked_language_model, transform=transforms)
+        self.train = OCRDataset(config['dataset']['root_dir'], config['dataset']['train_annotation'], self.vocab, transform=self.img_trans, aug=augm)
+        if self.split:
+            train_length=int(config['dataset']['len_train'] * len(self.data))
+            test_length=len(self.data)-train_length
+            train_dataset,test_dataset=torch.utils.data.random_split(self.data,(train_length,test_length))
+            self.train = train_dataset
+            self.test = test_dataset
         if self.valid_annotation:
-            self.valid_gen = self.data_gen('valid_{}'.format(self.dataset_name), 
-                    self.data_root, self.valid_annotation, masked_language_model=False)
+            self.valid = OCRDataset(config['dataset']['root_dir'], config['dataset']['valid_annotation'], self.vocab, transform=transforms.Resize((488, 488)), aug=None)
 
         self.train_losses = []
         
