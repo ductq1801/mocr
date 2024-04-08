@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import json
 from PIL import Image
-
+import os
 class OCRDataset(Dataset):
     def __init__(self, root_dir, df, vocab, transform=None, aug=None):
         self.root_dir = root_dir
@@ -17,7 +17,7 @@ class OCRDataset(Dataset):
     
     def __getitem__(self,idx):
         img_path,text = self.df.iloc[idx]
-        img = Image.open(img_path)
+        img = Image.open(os.path.join(self.root_dir,img_path))
         
         if self.aug:
             img = self.aug(img)
@@ -26,7 +26,7 @@ class OCRDataset(Dataset):
         
         text = self.vocab.encode(text)
 
-        return img,text
+        return {'img':img,'word':text}
 class Collator(object):
     def __init__(self, masked_language_model=True):
         self.masked_language_model = masked_language_model
@@ -39,7 +39,6 @@ class Collator(object):
         max_label_len = max(len(sample['word']) for sample in batch)
         for sample in batch:
             img.append(sample['img'])
-            filenames.append(sample['img_path'])
             label = sample['word']
             label_len = len(label)
             
@@ -75,7 +74,6 @@ class Collator(object):
             'tgt_input': torch.LongTensor(tgt_input),
             'tgt_output': torch.LongTensor(tgt_output),
             'tgt_padding_mask': torch.BoolTensor(tgt_padding_mask),
-            'filenames': filenames
         }   
         
         return rs

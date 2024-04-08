@@ -70,7 +70,7 @@ class Trainer():
         self.df = get_df(config['dataset']['annot_path'])
         if self.valid_annotation:
             valid_trans = transforms.Compose([
-                transforms.Resize(488, 488),
+                transforms.Resize((488, 488)),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(torch.float),
                 ])
@@ -306,8 +306,7 @@ class Trainer():
 
         batch = {
                 'img': img, 'tgt_input':tgt_input, 
-                'tgt_output':tgt_output, 'tgt_padding_mask':tgt_padding_mask, 
-                'filenames': batch['filenames']
+                'tgt_output':tgt_output, 'tgt_padding_mask':tgt_padding_mask,
                 }
 
         return batch
