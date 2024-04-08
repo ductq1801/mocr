@@ -2,7 +2,7 @@ import os
 from PIL import Image
 import time
 from dataloader.img_aug import ImgAugTransform
-from dataloader.dataloader import OCRDataset
+from mocr.dataloader.dataset import OCRDataset
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -19,6 +19,9 @@ from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy
 from translate import translate,batch_translate_beam_search
 from torchvision import transforms
+
+import json
+import pandas as pd
 
 class Trainer():
     def __init__(self, config, pretrained=True, augmentor=ImgAugTransform()):
@@ -64,22 +67,36 @@ class Trainer():
 
         self.criterion = LabelSmoothingLoss(len(self.vocab), padding_idx=self.vocab.pad, smoothing=0.1)
         
+        self.df = get_df(config['dataset']['annot_path'])
+        if self.valid_annotation:
+            valid_trans = transforms.Compose([
+                transforms.Resize(488, 488),
+                transforms.PILToTensor(),
+                transforms.ConvertImageDtype(torch.float),
+                ])
+            self.valid = get_df(config['dataset']['valid_annotation'])
+            self.valid = OCRDataset(config['dataset']['root_dir'], self.valid, self.vocab, transform=valid_trans, aug=None)
+            self.split = False
+        if self.split:
+            msk = np.random.rand(len(self.df)) < 0.8
+            self.train = self.df[msk]
+            self.valid = self.df[~msk]
+        else:
+            self.train = self.df
         augm = None
         if self.image_aug:
             augm =  augmentor
         
         self.img_trans = create_transform(**resolve_data_config(self.model.img_enc.pretrained_cfg, model=self.model.img_enc))
+        self.img_valid = transforms.Compose([
+     transforms.PILToTensor(),
+     transforms.ConvertImageDtype(torch.float),
+ ])
+        self.train = OCRDataset(config['dataset']['root_dir'], self.train, self.vocab, transform=self.img_trans, aug=augm)
+        self.valid = OCRDataset(config['dataset']['root_dir'], self.valid, self.vocab, transform=self.img_valid, aug=None)
 
-        self.train = OCRDataset(config['dataset']['root_dir'], config['dataset']['train_annotation'], self.vocab, transform=self.img_trans, aug=augm)
-        if self.split:
-            train_length=int(config['dataset']['len_train'] * len(self.data))
-            test_length=len(self.data)-train_length
-            train_dataset,test_dataset=torch.utils.data.random_split(self.data,(train_length,test_length))
-            self.train = train_dataset
-            self.test = test_dataset
-        if self.valid_annotation:
-            self.valid = OCRDataset(config['dataset']['root_dir'], config['dataset']['valid_annotation'], self.vocab, transform=transforms.Resize((488, 488)), aug=None)
-
+        self.train = DataLoader(self.train, batch_size=config['train']['batch_size'], shuffle=True)
+        self.valid = DataLoader(self.valid, batch_size=1, shuffle=True)
         self.train_losses = []
         
     def train(self):
@@ -89,17 +106,11 @@ class Trainer():
         total_gpu_time = 0
         best_acc = 0
 
-        data_iter = iter(self.train_gen)
-        for i in range(self.num_iters):
-            self.iter += 1
+        for step, batch in enumerate(self.train):
 
             start = time.time()
-
-            try:
-                batch = next(data_iter)
-            except StopIteration:
-                data_iter = iter(self.train_gen)
-                batch = next(data_iter)
+            
+            
 
             total_loader_time += time.time() - start
 
@@ -140,7 +151,7 @@ class Trainer():
         total_loss = []
         
         with torch.no_grad():
-            for step, batch in enumerate(self.valid_gen):
+            for step, batch in enumerate(self.valid):
                 batch = self.batch_to_device(batch)
                 img, tgt_input, tgt_output, tgt_padding_mask = batch['img'], batch['tgt_input'], batch['tgt_output'], batch['tgt_padding_mask']
 
@@ -166,14 +177,14 @@ class Trainer():
         actual_sents = []
         img_files = []
 
-        for batch in self.valid_gen:
+        for batch in self.valid:
             batch = self.batch_to_device(batch)
 
-            if self.beamsearch:
-                translated_sentence = batch_translate_beam_search(batch['img'], self.model)
-                prob = None
-            else:
-                translated_sentence, prob = translate(batch['img'], self.model)
+            # if self.beamsearch:
+            #     translated_sentence = batch_translate_beam_search(batch['img'], self.model)
+            #     prob = None
+            # else:
+            translated_sentence, prob = translate(batch['img'], self.model)
 
             pred_sent = self.vocab.batch_decode(translated_sentence.tolist())
             actual_sent = self.vocab.batch_decode(batch['tgt_output'].tolist())
@@ -287,3 +298,25 @@ class Trainer():
         os.makedirs(path, exist_ok=True)
        
         torch.save(self.model.state_dict(), filename)
+    def batch_to_device(self, batch):
+        img = batch['img'].to(self.device, non_blocking=True)
+        tgt_input = batch['tgt_input'].to(self.device, non_blocking=True)
+        tgt_output = batch['tgt_output'].to(self.device, non_blocking=True)
+        tgt_padding_mask = batch['tgt_padding_mask'].to(self.device, non_blocking=True)
+
+        batch = {
+                'img': img, 'tgt_input':tgt_input, 
+                'tgt_output':tgt_output, 'tgt_padding_mask':tgt_padding_mask, 
+                'filenames': batch['filenames']
+                }
+
+        return batch
+def get_df(df_path):
+    if df_path.split('.')[-1] not in ['txt','json','csv']:
+        raise 'not support this type'
+    if df_path.split('.')[-1] == 'json':
+        f = open(df_path)
+        data = json.load(f)
+        return pd.DataFrame(data.items(),columns=['img_path','text'])
+    else:
+        return pd.read_csv(df_path,columns=['img_path','text'])

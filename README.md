@@ -1,1 +1,1 @@
-Mul OCR
+Mini OCR

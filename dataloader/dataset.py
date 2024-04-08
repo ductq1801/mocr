@@ -6,17 +6,9 @@ import json
 from PIL import Image
 
 class OCRDataset(Dataset):
-    def __init__(self, root_dir, annot_path, vocab, transform=None, aug=None):
+    def __init__(self, root_dir, df, vocab, transform=None, aug=None):
         self.root_dir = root_dir
-        self.annot_path = annot_path
-        if annot_path.split('.')[-1] == 'json':
-            f = open(annot_path)
-            data = json(f)
-            self.df = pd.DataFrame(data.items(),columns=['img_path','text'])
-
-        else:
-            self.df = pd.read_csv(annot_path,columns=['img_path','text'])
-
+        self.df = df
         self.vocab = vocab
         self.transform = transform
         self.aug = aug
