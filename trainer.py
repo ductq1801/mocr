@@ -2,7 +2,7 @@ import os
 from PIL import Image
 import time
 from dataloader.img_aug import ImgAugTransform
-from mocr.dataloader.dataset import OCRDataset
+from dataloader.dataset import OCRDataset,Collator
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -66,7 +66,7 @@ class Trainer():
 #            **config['optimizer'])
 
         self.criterion = LabelSmoothingLoss(len(self.vocab), padding_idx=self.vocab.pad, smoothing=0.1)
-        
+        self.collate_fn = Collator(config['mask_language_model'])
         self.df = get_df(config['dataset']['annot_path'])
         if self.valid_annotation:
             valid_trans = transforms.Compose([
@@ -95,8 +95,8 @@ class Trainer():
         self.train = OCRDataset(config['dataset']['root_dir'], self.train, self.vocab, transform=self.img_trans, aug=augm)
         self.valid = OCRDataset(config['dataset']['root_dir'], self.valid, self.vocab, transform=self.img_valid, aug=None)
 
-        self.train = DataLoader(self.train, batch_size=config['train']['batch_size'], shuffle=True)
-        self.valid = DataLoader(self.valid, batch_size=1, shuffle=True)
+        self.train = DataLoader(self.train, batch_size=config['train']['batch_size'], shuffle=True,collate_fn=self.collate_fn)
+        self.valid = DataLoader(self.valid, batch_size=1, shuffle=True,collate_fn=self.collate_fn)
         self.train_losses = []
         
     def train(self):
