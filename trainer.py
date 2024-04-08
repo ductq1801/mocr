@@ -102,18 +102,15 @@ class Trainer():
     def train(self):
         total_loss = 0
         
-        total_loader_time = 0
         total_gpu_time = 0
         best_acc = 0
 
-        for step, batch in enumerate(self.train):
-
+        for _, batch in enumerate(self.train):
+            self.iter += 1
             start = time.time()
+            loss = self.step(batch)
             
             
-
-            total_loader_time += time.time() - start
-
             start = time.time()
             loss = self.step(batch)
             total_gpu_time += time.time() - start
@@ -122,12 +119,11 @@ class Trainer():
             self.train_losses.append((self.iter, loss))
 
             if self.iter % self.print_every == 0:
-                info = 'iter: {:06d} - train loss: {:.3f} - lr: {:.2e} - load time: {:.2f} - gpu time: {:.2f}'.format(self.iter, 
+                info = 'iter: {:06d} - train loss: {:.3f} - lr: {:.2e}  - gpu time: {:.2f}'.format(self.iter, 
                         total_loss/self.print_every, self.optimizer.param_groups[0]['lr'], 
-                        total_loader_time, total_gpu_time)
+                         total_gpu_time)
 
                 total_loss = 0
-                total_loader_time = 0
                 total_gpu_time = 0
                 print(info) 
                 #self.logger.log(info)
@@ -144,7 +140,31 @@ class Trainer():
                     self.save_weights(self.export_weights)
                     best_acc = acc_full_seq
 
-            
+    def step(self, batch):
+        self.model.train()
+
+        batch = self.batch_to_device(batch)
+        img, tgt_input, tgt_output, tgt_padding_mask = batch['img'], batch['tgt_input'], batch['tgt_output'], batch['tgt_padding_mask']    
+        
+        outputs = self.model(img, tgt_input, tgt_key_padding_mask=tgt_padding_mask)
+#        loss = self.criterion(rearrange(outputs, 'b t v -> (b t) v'), rearrange(tgt_output, 'b o -> (b o)'))
+        outputs = outputs.view(-1, outputs.size(2))#flatten(0, 1)
+        tgt_output = tgt_output.view(-1)#flatten()
+        
+        loss = self.criterion(outputs, tgt_output)
+
+        self.optimizer.zero_grad()
+
+        loss.backward()
+        
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1) 
+
+        self.optimizer.step()
+        self.scheduler.step()
+
+        loss_item = loss.item()
+
+        return loss_item        
     def validate(self):
         self.model.eval()
 
