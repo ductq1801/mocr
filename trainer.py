@@ -2,7 +2,7 @@ import os
 from PIL import Image
 import time
 from dataloader.img_aug import ImgAugTransform
-from dataloader.dataset import OCRDataset,Collator
+from dataloader.dataset import OCRDataset,Collator,ClusterRandomSampler
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -228,7 +228,27 @@ class Trainer():
         acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
     
         return acc_full_seq, acc_per_char
-    
+    def data_gen(self, lmdb_path, data_root, annotation, masked_language_model=True, transform=None):
+        dataset = OCRDataset(lmdb_path=lmdb_path, 
+                root_dir=data_root, annotation_path=annotation, 
+                vocab=self.vocab, transform=transform, 
+                image_height=self.config['dataset']['image_height'], 
+                image_min_width=self.config['dataset']['image_min_width'], 
+                image_max_width=self.config['dataset']['image_max_width'])
+
+        sampler = ClusterRandomSampler(dataset, self.batch_size, True)
+        collate_fn = Collator(masked_language_model)
+
+        gen = DataLoader(
+                dataset,
+                batch_size=self.batch_size, 
+                sampler=sampler,
+                collate_fn = collate_fn,
+                shuffle=False,
+                drop_last=False,
+                **self.config['dataloader'])
+       
+        return gen
     def visualize_prediction(self, sample=16, errorcase=False, fontname='serif', fontsize=16):
         
         pred_sents, actual_sents, img_files, probs = self.predict(sample)

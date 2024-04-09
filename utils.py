@@ -1,6 +1,30 @@
 import numpy as np
 from model.mocr import MOCR
 from model.vocab import Vocab
+import math
+from PIL import Image
+import torch
+import lmdb
+import tqdm 
+import sys 
+import cv2
+
+def checkImageIsValid(imageBin):
+    isvalid = True
+    imgH = None
+    imgW = None
+
+    imageBuf = np.fromstring(imageBin, dtype=np.uint8)
+    try:
+        img = cv2.imdecode(imageBuf, cv2.IMREAD_GRAYSCALE)
+
+        imgH, imgW = img.shape[0], img.shape[1]
+        if imgH * imgW == 0:
+            isvalid = False
+    except Exception as e:
+        isvalid = False
+
+    return isvalid, imgH, imgW
 def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
     """
     Computes accuracy
@@ -83,3 +107,94 @@ class Logger():
 
     def close(self):
         self.logger.close()
+def resize(w, h, expected_height, image_min_width, image_max_width):
+    new_w = int(expected_height * float(w) / float(h))
+    round_to = 10
+    new_w = math.ceil(new_w/round_to)*round_to
+    new_w = max(new_w, image_min_width)
+    new_w = min(new_w, image_max_width)
+
+    return new_w, expected_height
+
+def process_image(image, image_height, image_min_width, image_max_width):
+    img = image.convert('RGB')
+
+    w, h = img.size
+    new_w, image_height = resize(w, h, image_height, image_min_width, image_max_width)
+
+    img = img.resize((new_w, image_height), Image.LANCZOS)
+
+    img = np.asarray(img).transpose(2,0, 1)
+    img = img/255
+    return img
+
+def process_input(image, image_height, image_min_width, image_max_width):
+    img = process_image(image, image_height, image_min_width, image_max_width)
+    img = img[np.newaxis, ...]
+    img = torch.FloatTensor(img)
+    return img
+
+def writeCache(env, cache):
+    with env.begin(write=True) as txn:
+        for k, v in cache.items():
+            txn.put(k.encode(), v)
+
+def createDataset(outputPath, root_dir, df_annotation):
+    """
+    Create LMDB dataset for CRNN training.
+    ARGS:
+        outputPath    : LMDB output path
+        imagePathList : list of image path
+        labelList     : list of corresponding groundtruth texts
+        lexiconList   : (optional) list of lexicon lists
+        checkValid    : if true, check the validity of every image
+    """
+    annotations = [list(df_annotation[i]).values for i in range(len(df_annotation))]
+
+    nSamples = len(annotations)
+    env = lmdb.open(outputPath, map_size=1099511627776)
+    cache = {}
+    cnt = 0
+    error = 0
+    
+    pbar = tqdm(range(nSamples), ncols = 100, desc='Create {}'.format(outputPath)) 
+    for i in pbar:
+        imageFile, label = annotations[i]
+        imagePath = os.path.join(root_dir, imageFile)
+
+        if not os.path.exists(imagePath):
+            error += 1
+            continue
+        
+        with open(imagePath, 'rb') as f:
+            imageBin = f.read()
+        isvalid, imgH, imgW = checkImageIsValid(imageBin)
+
+        if not isvalid:
+            error += 1
+            continue
+
+        imageKey = 'image-%09d' % cnt
+        labelKey = 'label-%09d' % cnt
+        pathKey = 'path-%09d' % cnt
+        dimKey = 'dim-%09d' % cnt
+
+        cache[imageKey] = imageBin
+        cache[labelKey] = label.encode()
+        cache[pathKey] = imageFile.encode()
+        cache[dimKey] = np.array([imgH, imgW], dtype=np.int32).tobytes()
+
+        cnt += 1
+
+        if cnt % 1000 == 0:
+            writeCache(env, cache)
+            cache = {}
+
+    nSamples = cnt-1
+    cache['num-samples'] = str(nSamples).encode()
+    writeCache(env, cache)
+
+    if error > 0:
+        print('Remove {} invalid images'.format(error))
+    print('Created dataset with %d samples' % nSamples)
+    sys.stdout.flush()

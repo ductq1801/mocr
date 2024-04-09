@@ -5,28 +5,137 @@ import pandas as pd
 import json
 from PIL import Image
 import os
+from torch.utils.data.sampler import Sampler
+import random 
+import lmdb
+import six
+from utils import createDataset,process_image,resize
+import defaultdict
+import tqdm
+
 class OCRDataset(Dataset):
-    def __init__(self, root_dir, df, vocab, transform=None, aug=None):
+    def __init__(self,lmdb_path, root_dir, df_annotation, vocab, image_height=32, image_min_width=32, image_max_width=512, transform=None, aug=None):
         self.root_dir = root_dir
-        self.df = df
+
         self.vocab = vocab
         self.transform = transform
         self.aug = aug
-    def __len__(self):
-        return len(self.df)
+
+        self.lmdb_path =  lmdb_path
+
+        self.image_height = image_height
+        self.image_min_width = image_min_width
+        self.image_max_width = image_max_width
+
+        createDataset(self.lmdb_path, root_dir, df_annotation)
+        self.env = lmdb.open(
+            self.lmdb_path,
+            max_readers=8,
+            readonly=True,
+            lock=False,
+            readahead=False,
+            meminit=False)
+        self.txn = self.env.begin(write=False)
+
+        nSamples = int(self.txn.get('num-samples'.encode()))
+        self.nSamples = nSamples
+
+        self.build_cluster_indices()
+    def build_cluster_indices(self):
+        self.cluster_indices = defaultdict(list)
+
+        pbar = tqdm(range(self.__len__()), 
+                desc='{} build cluster'.format(self.lmdb_path), 
+                ncols = 100, position=0, leave=True) 
+
+        for i in pbar:
+            bucket = self.get_bucket(i)
+            self.cluster_indices[bucket].append(i)
+
     
-    def __getitem__(self,idx):
-        img_path,text = self.df.iloc[idx]
-        img = Image.open(os.path.join(self.root_dir,img_path))
+    def get_bucket(self, idx):
+        key = 'dim-%09d'%idx
+
+        dim_img = self.txn.get(key.encode())
+        dim_img = np.fromstring(dim_img, dtype=np.int32)
+        imgH, imgW = dim_img
+
+        new_w, image_height = resize(imgW, imgH, self.image_height, self.image_min_width, self.image_max_width)
+
+        return new_w
+
+    def read_buffer(self, idx):
+        img_file = 'image-%09d'%idx
+        label_file = 'label-%09d'%idx
+        #path_file = 'path-%09d'%idx
         
+        imgbuf = self.txn.get(img_file.encode())
+        
+        label = self.txn.get(label_file.encode()).decode()
+        #img_path = self.txn.get(path_file.encode()).decode()
+
+        buf = six.BytesIO()
+        buf.write(imgbuf)
+        buf.seek(0)
+    
+        return buf, label#, img_path
+
+    def read_data(self, idx):
+        buf, label, img_path = self.read_buffer(idx) 
+
+        img = Image.open(buf).convert('RGB')        
         if self.aug:
             img = self.aug(img)
         if self.transform:
             img = self.transform(img)
-        
-        text = self.vocab.encode(text)
 
-        return {'img':img,'word':text}
+        img_bw = process_image(img, self.image_height, self.image_min_width, self.image_max_width)
+            
+        word = self.vocab.encode(label)
+
+        return img_bw, word, img_path
+    def __len__(self):
+        return self.nSamples
+    
+    def __getitem__(self, idx):
+        #img, word, img_path = self.read_data(idx)
+        img, word = self.read_data(idx)
+        img_path = os.path.join(self.root_dir, img_path)
+        
+        #sample = {'img': img, 'word': word, 'img_path': img_path}
+        sample = {'img': img, 'word': word}
+        return sample
+    
+class ClusterRandomSampler(Sampler):
+    
+    def __init__(self, data_source, batch_size, shuffle=True):
+        self.data_source = data_source
+        self.batch_size = batch_size
+        self.shuffle = shuffle        
+
+    def flatten_list(self, lst):
+        return [item for sublist in lst for item in sublist]
+
+    def __iter__(self):
+        batch_lists = []
+        for cluster, cluster_indices in self.data_source.cluster_indices.items():
+            if self.shuffle:
+                random.shuffle(cluster_indices)
+
+            batches = [cluster_indices[i:i + self.batch_size] for i in range(0, len(cluster_indices), self.batch_size)]
+            batches = [_ for _ in batches if len(_) == self.batch_size]
+            if self.shuffle:
+                random.shuffle(batches)
+
+            batch_lists.append(batches)
+
+        lst = self.flatten_list(batch_lists)
+        if self.shuffle:
+            random.shuffle(lst)
+
+        lst = self.flatten_list(lst)
+
+        return iter(lst)
 class Collator(object):
     def __init__(self, masked_language_model=True):
         self.masked_language_model = masked_language_model
