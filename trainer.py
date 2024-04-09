@@ -94,11 +94,13 @@ class Trainer():
      transforms.PILToTensor(),
      transforms.ConvertImageDtype(torch.float),
  ])
-        self.train_data = OCRDataset(config['dataset']['data_root'], self.train_data, self.vocab, transform=self.img_trans, aug=augm)
-        self.valid_data = OCRDataset(config['dataset']['data_root'], self.valid_data, self.vocab, transform=self.img_valid, aug=None)
+        self.train_gen =  self.data_gen(self, f'train_{self.dataset_name}', self.data_root, self.train_data, masked_language_model=False, transform=self.img_trans, aug=augm)
+        self.valid_gen =  self.data_gen(self, f'valid_{self.dataset_name}', self.data_root, self.valid_data, masked_language_model=False, transform=self.img_valid, aug=None)
+        # self.train_data = OCRDataset(config['dataset']['data_root'], self.train_data, self.vocab, transform=self.img_trans, aug=augm)
+        # self.valid_data = OCRDataset(config['dataset']['data_root'], self.valid_data, self.vocab, transform=self.img_valid, aug=None)
 
-        self.train_data = DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True,collate_fn=self.collate_fn)
-        self.valid_data = DataLoader(self.valid_data, batch_size=1, shuffle=True,collate_fn=self.collate_fn)
+        # self.train_data = DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True,collate_fn=self.collate_fn)
+        # self.valid_data = DataLoader(self.valid_data, batch_size=1, shuffle=True,collate_fn=self.collate_fn)
         self.train_losses = []
         
     def train(self):
@@ -108,7 +110,7 @@ class Trainer():
           total_gpu_time = 0
           n_batch = 0
           batch_loss = []
-          for batch in self.train_data:
+          for batch in self.train_gen:
               n_batch += 1
               start = time.time()
               batch = self.batch_to_device(batch)
@@ -172,7 +174,7 @@ class Trainer():
         total_loss = []
         
         with torch.no_grad():
-            for step, batch in enumerate(self.valid_data):
+            for step, batch in enumerate(self.valid_gen):
                 batch = self.batch_to_device(batch)
                 img, tgt_input, tgt_output, tgt_padding_mask = batch['img'], batch['tgt_input'], batch['tgt_output'], batch['tgt_padding_mask']
 
@@ -198,7 +200,7 @@ class Trainer():
         actual_sents = []
         #img_files = []
 
-        for batch in self.valid_data:
+        for batch in self.valid_gen:
             batch = self.batch_to_device(batch)
 
             # if self.beamsearch:
@@ -228,10 +230,10 @@ class Trainer():
         acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
     
         return acc_full_seq, acc_per_char
-    def data_gen(self, lmdb_path, data_root, annotation, masked_language_model=True, transform=None):
+    def data_gen(self, lmdb_path, data_root, df_annotation, masked_language_model=False, transform=None, aug=None):
         dataset = OCRDataset(lmdb_path=lmdb_path, 
-                root_dir=data_root, annotation_path=annotation, 
-                vocab=self.vocab, transform=transform, 
+                root_dir=data_root, df_annotation=df_annotation, 
+                vocab=self.vocab, transform=transform,aug=aug, 
                 image_height=self.config['dataset']['image_height'], 
                 image_min_width=self.config['dataset']['image_min_width'], 
                 image_max_width=self.config['dataset']['image_max_width'])

@@ -6,3 +6,4 @@ einops
 Pillow
 albumentations
 matplotlib
+lmdb
