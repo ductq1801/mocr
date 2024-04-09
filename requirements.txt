@@ -1,9 +1,8 @@
 numpy
 torch
-einops
-PIL
-yaml
-albumentations
 pandas
 timm
+einops
+Pillow
+albumentations
 matplotlib

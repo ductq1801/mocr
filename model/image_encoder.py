@@ -1,11 +1,14 @@
 import timm
 import torch
 from torch import nn
+from timm.data import resolve_data_config
+from timm.data.transforms_factory import create_transform
 
 class Image_Encoder(nn.Module):
     def __init__(self,hidden_dim,pretrained=True,drop_out=0.2):
         super(Image_Encoder,self).__init__()
         model = timm.create_model('tf_efficientnet_b5.ns_jft_in1k',pretrained=pretrained)
+        self.trans = create_transform(**resolve_data_config(model.pretrained_cfg, model=model))
         self.features = nn.Sequential(*list(model.children())[:-4])
         in_features = self.features[-1][-1][-1].conv_pwl.out_channels
         self.dropout = nn.Dropout(drop_out)
@@ -14,7 +17,7 @@ class Image_Encoder(nn.Module):
         """
         Shape:
             - x: (B, C, W, H)
-            - output: (B,H_dim, C)
+            - output: (H_dim,B, C)
             
         """
         x = self.features(x)

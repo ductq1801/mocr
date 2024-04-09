@@ -12,9 +12,6 @@ from torch.optim import Adam, SGD, AdamW
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR, CyclicLR, OneCycleLR
 
-from timm.data import resolve_data_config
-from timm.data.transforms_factory import create_transform
-
 from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy
 from translate import translate,batch_translate_beam_search
@@ -89,7 +86,7 @@ class Trainer():
         if self.image_aug:
             augm =  augmentor
         
-        self.img_trans = create_transform(**resolve_data_config(self.model.img_enc.model.pretrained_cfg, model=self.model.img_enc))
+        self.img_trans = self.model.img_enc.trans
         self.img_valid = transforms.Compose([
      transforms.PILToTensor(),
      transforms.ConvertImageDtype(torch.float),
