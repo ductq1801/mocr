@@ -76,7 +76,7 @@ def translate(img, model, max_seq_length=128, sos_token=1, eos_token=2):
     device = img.device
 
     with torch.no_grad():
-        src = model.cnn(img)
+        src = model.img_enc(img)
         memory = model.transformer.forward_encoder(src)
 
         translated_sentence = [[sos_token]*len(img)]

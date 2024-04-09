@@ -22,11 +22,11 @@ optimizer:
 
 trainer:
     batch_size: 8
-    print_every: 200
-    valid_every: 4000
-    iters: 100000
+    print_every: 1
+    valid_every: 1
+    iters: 100
     # where to save our model for prediction
-    export: ./weights/transformerocr.pth
+    export: /content/mocr/weights/transformerocr.pth
     checkpoint: ./checkpoint/transformerocr_checkpoint.pth
     log: ./train.log
     # null to disable compuate accuracy, or change to number of sample to enable validiation while training
