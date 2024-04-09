@@ -5,15 +5,22 @@ from torch import nn
 class Image_Encoder(nn.Module):
     def __init__(self,hidden_dim,pretrained=True,drop_out=0.2):
         super(Image_Encoder,self).__init__()
-        self.model = timm.create_model('tf_efficientnet_b5.ns_jft_in1k',pretrained=pretrained)
-        in_feature = self.model.classifier.in_features
-        self.model.classifier = nn.Sequential(nn.Dropout(drop_out),
-                                              nn.Linear(in_feature,hidden_dim))
+        model = timm.create_model('tf_efficientnet_b5.ns_jft_in1k',pretrained=pretrained)
+        self.features = nn.Sequential(*list(model.children())[:-4])
+        in_features = self.features[-1][-1][-1].conv_pwl.out_channels
+        self.dropout = nn.Dropout(drop_out)
+        self.conv_1x1 = nn.Conv2d(in_features, hidden_dim, 1)
     def forward(self,x):
         """
         Shape:
             - x: (B, C, W, H)
-            - output: (B, H_dim)
+            - output: (B,H_dim, C)
             
         """
-        return self.model(x)
+        x = self.features(x)
+        x = self.dropout(x)
+        x = self.conv_1x1(x)
+        x =  x.transpose(-1, -2)
+        x = x.flatten(2)
+        x = x.permute(-1, 0, 1)
+        return x
