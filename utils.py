@@ -5,7 +5,7 @@ import math
 from PIL import Image
 import torch
 import lmdb
-import tqdm 
+from tqdm import tqdm 
 import sys 
 import cv2
 
@@ -116,9 +116,9 @@ def resize(w, h, expected_height, image_min_width, image_max_width):
 
     return new_w, expected_height
 
-def process_image(image, image_height, image_min_width, image_max_width):
-    img = image.convert('RGB')
-
+def process_image(img, image_height, image_min_width, image_max_width):
+    img = np.array(img)
+    img = Image.fromarray(img)
     w, h = img.size
     new_w, image_height = resize(w, h, image_height, image_min_width, image_max_width)
 
@@ -149,7 +149,7 @@ def createDataset(outputPath, root_dir, df_annotation):
         lexiconList   : (optional) list of lexicon lists
         checkValid    : if true, check the validity of every image
     """
-    annotations = [list(df_annotation[i]).values for i in range(len(df_annotation))]
+    annotations = [list(df_annotation.iloc[i].values) for i in range(len(df_annotation))]
 
     nSamples = len(annotations)
     env = lmdb.open(outputPath, map_size=1099511627776)

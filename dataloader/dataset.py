@@ -10,8 +10,10 @@ import random
 import lmdb
 import six
 from utils import createDataset,process_image,resize
-import defaultdict
-import tqdm
+from collections import defaultdict 
+from tqdm import tqdm 
+import sys
+
 
 class OCRDataset(Dataset):
     def __init__(self,lmdb_path, root_dir, df_annotation, vocab, image_height=32, image_min_width=32, image_max_width=512, transform=None, aug=None):
@@ -26,8 +28,11 @@ class OCRDataset(Dataset):
         self.image_height = image_height
         self.image_min_width = image_min_width
         self.image_max_width = image_max_width
-
-        createDataset(self.lmdb_path, root_dir, df_annotation)
+        if os.path.isdir(self.lmdb_path):
+            print('{} exists. Remove folder if you want to create new dataset'.format(self.lmdb_path))
+            sys.stdout.flush()
+        else:
+            createDataset(self.lmdb_path, root_dir, df_annotation)
         self.env = lmdb.open(
             self.lmdb_path,
             max_readers=8,
@@ -81,26 +86,26 @@ class OCRDataset(Dataset):
         return buf, label#, img_path
 
     def read_data(self, idx):
-        buf, label, img_path = self.read_buffer(idx) 
+        buf, label = self.read_buffer(idx) 
 
         img = Image.open(buf).convert('RGB')        
         if self.aug:
             img = self.aug(img)
-        if self.transform:
-            img = self.transform(img)
+        #if self.transform:
+        #    img = self.transform(img)
 
         img_bw = process_image(img, self.image_height, self.image_min_width, self.image_max_width)
             
         word = self.vocab.encode(label)
 
-        return img_bw, word, img_path
+        return img_bw, word
     def __len__(self):
         return self.nSamples
     
     def __getitem__(self, idx):
         #img, word, img_path = self.read_data(idx)
         img, word = self.read_data(idx)
-        img_path = os.path.join(self.root_dir, img_path)
+        #img_path = os.path.join(self.root_dir, img_path)
         
         #sample = {'img': img, 'word': word, 'img_path': img_path}
         sample = {'img': img, 'word': word}

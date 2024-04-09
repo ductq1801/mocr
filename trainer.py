@@ -90,12 +90,12 @@ class Trainer():
             augm =  augmentor
         
         self.img_trans = self.model.img_enc.trans
-        self.img_valid = transforms.Compose([
-     transforms.PILToTensor(),
-     transforms.ConvertImageDtype(torch.float),
- ])
-        self.train_gen =  self.data_gen(self, f'train_{self.dataset_name}', self.data_root, self.train_data, masked_language_model=False, transform=self.img_trans, aug=augm)
-        self.valid_gen =  self.data_gen(self, f'valid_{self.dataset_name}', self.data_root, self.valid_data, masked_language_model=False, transform=self.img_valid, aug=None)
+#         self.img_valid = transforms.Compose([
+#      #transforms.PILToTensor(),
+#      transforms.ConvertImageDtype(torch.float),
+#  ])
+        self.train_gen =  self.data_gen(f'train_{self.dataset_name}', self.data_root, self.train_data, masked_language_model=False, transform=self.img_trans, aug=augm)
+        self.valid_gen =  self.data_gen(f'valid_{self.dataset_name}', self.data_root, self.valid_data, masked_language_model=False, transform=None, aug=None)
         # self.train_data = OCRDataset(config['dataset']['data_root'], self.train_data, self.vocab, transform=self.img_trans, aug=augm)
         # self.valid_data = OCRDataset(config['dataset']['data_root'], self.valid_data, self.vocab, transform=self.img_valid, aug=None)
 
