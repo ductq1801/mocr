@@ -38,7 +38,7 @@ class Trainer():
         self.batch_size = config['trainer']['batch_size']
         self.print_every = config['trainer']['print_every']
         self.valid_every = config['trainer']['valid_every']
-        
+        self.sp_every = config['trainer']['checkpoint_every']
         self.image_aug = config['aug']['image_aug']
         self.masked_language_model = config['aug']['masked_language_model']
         
@@ -143,6 +143,8 @@ class Trainer():
               if acc_full_seq > best_acc:
                   self.save_weights(self.export_weights)
                   best_acc = acc_full_seq
+          if i % self.cp_every:
+              self.save_checkpoint(filename=self.checkpoint)
 
     def step(self, batch):
         self.model.train()
