@@ -7,7 +7,7 @@ device: cuda:0
 image_encoder:
     hidden_dim: 512
     pretrained: True
-    drop_out: 0.2
+    drop_out: 0.1
 seq_modeling: seq2seq
 transformer:
     encoder_hidden: 512
@@ -21,14 +21,13 @@ optimizer:
     pct_start: 0.1
 
 trainer:
-    batch_size: 8
+    batch_size: 32
     print_every: 1
-    valid_every: 1
-    checkpoint_every: 25
+    valid_every: 5
     iters: 100
     # where to save our model for prediction
     export: /content/mocr/weights/transformerocr.pth
-    checkpoint: ./checkpoint/transformerocr_checkpoint.pth
+    checkpoint: /content/mocr/checkpoint/transformerocr_checkpoint.pth
     log: ./train.log
     # null to disable compuate accuracy, or change to number of sample to enable validiation while training
     metrics: null
@@ -50,11 +49,11 @@ dataloader:
 
 aug:
     image_aug: True
-    masked_language_model: False
+    masked_language_model: True
 
 predictor:
     # disable or enable beamsearch while prediction, use beamsearch will be slower
     beamsearch: False
-
+    weights: /content/mocr/weights/transformerocr.pth
 quiet: False 
 split: True

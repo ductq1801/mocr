@@ -122,10 +122,9 @@ def build_model(config):
     device = config['device']
     
     model = MOCR(len(vocab),
-            config['backbone'],
-            config['cnn'], 
+            config['image_encoder'], 
             config['transformer'],
-            config['seq_modeling'])
+            )
     
     model = model.to(device)
 
