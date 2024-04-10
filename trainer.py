@@ -226,8 +226,8 @@ class Trainer():
     def precision(self, sample=None):
 
         pred_sents, actual_sents, _, = self.predict(sample=sample)
-        pred_sents = self.vocab.decode(pred_sents)
-        actual_sents = self.vocab.decode(actual_sents)
+        #pred_sents = self.vocab.decode(pred_sents)
+        #actual_sents = self.vocab.decode(actual_sents)
         acc_full_seq = compute_accuracy(actual_sents, pred_sents, mode='full_sequence')
         acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
     
