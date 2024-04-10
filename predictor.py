@@ -9,10 +9,10 @@ class Predictor():
         model, vocab = build_model(config)
         weights = '/tmp/weights.pth'
 
-        if config['weights'].startswith('http'):
+        if config['predictor']['weights'].startswith('http'):
             raise KeyError('not support download file yet!')
         else:
-            weights = config['weights']
+            weights = config['predictor']['weights']
 
         model.load_state_dict(torch.load(weights, map_location=torch.device(device)))
 
