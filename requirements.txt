@@ -7,3 +7,5 @@ Pillow
 albumentations
 matplotlib
 lmdb
+torchmetrics
+cv2

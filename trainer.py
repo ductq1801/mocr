@@ -16,7 +16,6 @@ from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy,Logger
 from translate import translate,batch_translate_beam_search
 from torchvision import transforms
-
 import json
 import pandas as pd
 
@@ -227,7 +226,8 @@ class Trainer():
     def precision(self, sample=None):
 
         pred_sents, actual_sents, _, = self.predict(sample=sample)
-
+        pred_sents = self.vocab.decode(pred_sents)
+        actual_sents = self.vocab.decode(actual_sents)
         acc_full_seq = compute_accuracy(actual_sents, pred_sents, mode='full_sequence')
         acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
     

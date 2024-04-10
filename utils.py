@@ -8,6 +8,7 @@ import lmdb
 from tqdm import tqdm 
 import sys 
 import cv2
+from torchmetrics.functional.text import word_error_rate,char_error_rate
 
 def checkImageIsValid(imageBin):
     isvalid = True
@@ -25,7 +26,7 @@ def checkImageIsValid(imageBin):
         isvalid = False
 
     return isvalid, imgH, imgW
-def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
+def compute_accuracy_v1(ground_truth, predictions, mode='full_sequence'):
     """
     Computes accuracy
     :param ground_truth:
@@ -79,6 +80,17 @@ def compute_accuracy(ground_truth, predictions, mode='full_sequence'):
         raise NotImplementedError('Other accuracy compute mode has not been implemented')
 
     return avg_accuracy
+
+def compute_accuracy_v1(ground_truth, predictions, mode='full_sequence',type='acc'):
+    if mode == 'full_sequence':
+        err = word_error_rate
+        if type == 'acc':
+            return 1-err
+        return err
+    err = char_error_rate
+    if type == 'acc':
+        return 1-err
+    return err
 def build_model(config):
     vocab = Vocab(config['vocab'])
     device = config['device']
