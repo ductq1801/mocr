@@ -24,6 +24,7 @@ trainer:
     batch_size: 32
     print_every: 1
     valid_every: 5
+    checkpoint_every: 20
     iters: 100
     # where to save our model for prediction
     export: /content/mocr/weights/transformerocr.pth

@@ -8,4 +8,4 @@ albumentations
 matplotlib
 lmdb
 torchmetrics
-cv2
+opencv-python

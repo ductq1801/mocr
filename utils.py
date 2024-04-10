@@ -81,16 +81,16 @@ def compute_accuracy_v1(ground_truth, predictions, mode='full_sequence'):
 
     return avg_accuracy
 
-def compute_accuracy_v1(ground_truth, predictions, mode='full_sequence',type='acc'):
+def compute_accuracy(ground_truth, predictions, mode='full_sequence',type='acc'):
     if mode == 'full_sequence':
-        err = word_error_rate
+        err = word_error_rate(predictions,ground_truth)
         if type == 'acc':
-            return 1-err
-        return err
-    err = char_error_rate
+            return max(1-err,0)
+        return (err,0)
+    err = char_error_rate(predictions,ground_truth)
     if type == 'acc':
-        return 1-err
-    return err
+        return max(1-err,0)
+    return (err,0)
 def build_model(config):
     vocab = Vocab(config['vocab'])
     device = config['device']

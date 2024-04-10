@@ -64,9 +64,11 @@ class Trainer():
         self.criterion = LabelSmoothingLoss(len(self.vocab), padding_idx=self.vocab.pad, smoothing=0.1)
         self.collate_fn = Collator(config['aug']['masked_language_model'])
         self.df = get_df(config['dataset']['train_annotation'])
+        
         if debug:
           db_msk = np.random.rand(len(self.df)) < 0.1
           self.df = self.df[db_msk]
+        
         if self.valid_annotation != None:
             valid_trans = transforms.Compose([
                 transforms.Resize((488, 488)),
