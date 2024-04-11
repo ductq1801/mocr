@@ -10,7 +10,7 @@ from einops import rearrange
 import torch
 from torch.optim import Adam, SGD, AdamW
 from torch.utils.data import DataLoader
-from torch.optim.lr_scheduler import CosineAnnealingLR, CyclicLR, OneCycleLR,
+from torch.optim.lr_scheduler import CosineAnnealingLR, CyclicLR, OneCycleLR
 
 from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy,Logger
@@ -365,4 +365,4 @@ def get_df(df_path):
         data = json.load(f)
         return pd.DataFrame(data.items(),columns=['img_path','text'])
     else:
-        return pd.read_csv(df_path,columns=['img_path','text'])
+        return pd.read_csv(df_path)

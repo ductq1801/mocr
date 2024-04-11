@@ -103,6 +103,7 @@ class Image_Encoder_v2(nn.Module):
         x = self.conv_1x1(x)
         x = x.transpose(-1, -2)
         x = x.flatten(2)
+        x = x.permute(0, -1, 1)
         x = x + self.attn(self.norm(x))
         x = x.permute(1, 0, -1)
         return x
