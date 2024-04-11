@@ -10,7 +10,7 @@ from einops import rearrange
 import torch
 from torch.optim import Adam, SGD, AdamW
 from torch.utils.data import DataLoader
-from torch.optim.lr_scheduler import CosineAnnealingLR, CyclicLR, OneCycleLR
+from torch.optim.lr_scheduler import CosineAnnealingLR, CyclicLR, OneCycleLR,
 
 from loss import LabelSmoothingLoss
 from utils import build_model,compute_accuracy,Logger
@@ -55,6 +55,7 @@ class Trainer():
         
         self.optimizer = AdamW(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09,lr=1e-3)
         self.scheduler = OneCycleLR(self.optimizer, total_steps=self.num_iters, **config['optimizer'])
+        self.scheduler = CyclicLR(self.optimizer, base_lr=0.0001, max_lr=0.05,step_size_up=5,mode="triangular2")
 #        self.optimizer = ScheduledOptim(
 #            Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
 #            #config['transformer']['d_model'], 
