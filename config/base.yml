@@ -1,5 +1,5 @@
 # change to list chars of your dataset or use default vietnamese chars
-vocab: 'aAàÀảẢãÃáÁạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoOòÒỏỎõÕóÓọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$%&''()*+,-./:;<=>?@[\]^_`{|}~ '
+vocab: 'aAàÀảẢãÃáÁạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoOòÒỏỎõÕóÓọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™''()*+,-./:;<=>?@[\]^_`{|}~ '
 
 # cpu, cuda, cuda:0
 device: cuda:0
@@ -19,7 +19,7 @@ transformer:
 optimizer:
     max_lr: 0.001
     pct_start: 0.1
-pretrain: /workspace/mocr/weights/transformerocr.pth
+pretrain: ./mocr/weights/transformerocr.pth
 trainer:
     batch_size: 32
     print_every: 1
@@ -27,8 +27,8 @@ trainer:
     checkpoint_every: 20
     iters: 1000
     # where to save our model for prediction
-    export: /workspace/mocr/weights/transformerocr.pth
-    checkpoint: /workspace/mocr/checkpoint/transformerocr_checkpoint.pth
+    export: ./mocr/weights/transformerocr.pth
+    checkpoint: ./mocr/checkpoint/transformerocr_checkpoint.pth
     log: ./train.log
     # null to disable compuate accuracy, or change to number of sample to enable validiation while training
     metrics: null
@@ -37,10 +37,10 @@ dataset:
     # name of your dataset
     name: data
     # path to annotation and image
-    data_root: /workspace/content/ocr_dataset/en_00/
-    train_annotation: /workspace/content/ocr_dataset/en_00_labels.csv
+    data_root: /content/content/ocr_dataset/en_00
+    train_annotation: /content/content/ocr_dataset/en_00_labels.csv
     valid_annotation: null
-    image_height: 128
+    image_height: 64
     image_min_width: 64
     image_max_width: 512
 
@@ -55,6 +55,6 @@ aug:
 predictor:
     # disable or enable beamsearch while prediction, use beamsearch will be slower
     beamsearch: False
-    weights: /workspace/mocr/weights/transformerocr.pth
+    weights: ./mocr/weights/transformerocr.pth
 quiet: False 
 split: True
