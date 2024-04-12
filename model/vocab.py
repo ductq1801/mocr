@@ -22,6 +22,8 @@ class Vocab():
       chars = chars.replace('”','"')
       chars = chars.replace('…','...')
       chars = chars.replace('–','—')
+      chars = chars.replace('−','—')
+      chars = chars.replace('’',"'")
       return chars
     def encode(self, chars):
         chars = self.norm(chars)

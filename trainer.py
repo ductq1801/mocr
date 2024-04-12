@@ -55,7 +55,7 @@ class Trainer():
         
         self.optimizer = AdamW(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09,lr=1e-3)
         self.scheduler = OneCycleLR(self.optimizer, total_steps=self.num_iters, **config['optimizer'])
-        self.scheduler = CyclicLR(self.optimizer, base_lr=0.0001, max_lr=0.05,step_size_up=5,mode="triangular2",cycle_momentum=False)
+        self.scheduler = CyclicLR(self.optimizer, base_lr=0.0001, max_lr=0.001,step_size_up=5,mode="triangular2",cycle_momentum=False)
 #        self.optimizer = ScheduledOptim(
 #            Adam(self.model.parameters(), betas=(0.9, 0.98), eps=1e-09),
 #            #config['transformer']['d_model'], 
@@ -201,11 +201,12 @@ class Trainer():
                 
                 del outputs
                 del loss
-
-        total_loss = np.mean(total_loss)
-        self.model.train()
         acc_full_seq = compute_accuracy(actual_sents, pred_sents, mode='full_sequence')
         acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
+        total_loss = np.mean(total_loss)
+
+        self.model.train()
+
         return total_loss,acc_full_seq, acc_per_char
     
     def predict(self, sample=None):

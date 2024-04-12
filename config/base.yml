@@ -1,5 +1,5 @@
 # change to list chars of your dataset or use default vietnamese chars
-vocab: 'aAàÀảẢãÃáÁĀạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoöOòÒỏỎõÕóōÓŌọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUüùÙủỦũŨŪúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™°²''()*+,-.—/:;<=>?@[\]^_`{|}~ '
+vocab: 'aAàÀảẢãÃáÁāĀạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoöÖOòÒỏỎõÕóōÓŌọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUüÜùÙủỦũŨūŪúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™°²''()*+,-.—/:;<=>?@[\]^_`{|}~ '
 
 # cpu, cuda, cuda:0
 device: cuda:0
@@ -19,16 +19,16 @@ transformer:
 optimizer:
     max_lr: 0.001
     pct_start: 0.1
-pretrain: ./mocr/weights/transformerocr.pth
+pretrain: ./weights/transformerocr.pth
 trainer:
     batch_size: 32
     print_every: 1
-    valid_every: 5
+    valid_every: 1
     checkpoint_every: 20
     iters: 1000
     # where to save our model for prediction
-    export: ./mocr/weights/transformerocr.pth
-    checkpoint: ./mocr/checkpoint/transformerocr_checkpoint.pth
+    export: ./weights/transformerocr.pth
+    checkpoint: ./checkpoint/transformerocr_checkpoint.pth
     log: ./train.log
     # null to disable compuate accuracy, or change to number of sample to enable validiation while training
     metrics: null
@@ -55,6 +55,6 @@ aug:
 predictor:
     # disable or enable beamsearch while prediction, use beamsearch will be slower
     beamsearch: False
-    weights: ./mocr/weights/transformerocr.pth
+    weights: ./weights/transformerocr.pth
 quiet: False 
 split: True
