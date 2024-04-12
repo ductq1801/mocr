@@ -120,7 +120,8 @@ class ClusterRandomSampler(Sampler):
 
     def flatten_list(self, lst):
         return [item for sublist in lst for item in sublist]
-
+    def __len__(self):
+        return sum(1 for _ in self)
     def __iter__(self):
         batch_lists = []
         for cluster, cluster_indices in self.data_source.cluster_indices.items():
