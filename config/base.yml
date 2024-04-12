@@ -1,5 +1,5 @@
 # change to list chars of your dataset or use default vietnamese chars
-vocab: 'aAàÀảẢãÃáÁạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoOòÒỏỎõÕóÓọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™''()*+,-./:;<=>?@[\]^_`{|}~ '
+vocab: 'aAàÀảẢãÃáÁĀạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoöOòÒỏỎõÕóōÓŌọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUüùÙủỦũŨŪúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™°²''()*+,-.—/:;<=>?@[\]^_`{|}~ '
 
 # cpu, cuda, cuda:0
 device: cuda:0
@@ -35,10 +35,10 @@ trainer:
 
 dataset:    
     # name of your dataset
-    name: data
+    name: vi_00
     # path to annotation and image
-    data_root: /content/ocr_dataset/en_00
-    train_annotation: /content/ocr_dataset/en_00_labels.csv
+    data_root: /content/ocr_dataset/vi_00
+    train_annotation: /content/ocr_dataset/vi_00_labels.csv
     valid_annotation: null
     image_height: 64
     image_min_width: 64

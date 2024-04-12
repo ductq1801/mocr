@@ -4,7 +4,7 @@ class Vocab():
         self.go = 1
         self.eos = 2
         self.mask_token = 3
-
+        chars = self.norm(chars)
         self.chars = chars
 
         self.c2i = {c:i+4 for i, c in enumerate(chars)}
@@ -15,8 +15,16 @@ class Vocab():
         self.i2c[1] = '<sos>'
         self.i2c[2] = '<eos>'
         self.i2c[3] = '*'
-
+    def norm(self,chars):
+      chars = chars.replace('Ð','Đ')
+      chars = chars.replace('ð','đ')
+      chars = chars.replace('“','"')
+      chars = chars.replace('”','"')
+      chars = chars.replace('…','...')
+      chars = chars.replace('–','—')
+      return chars
     def encode(self, chars):
+        chars = self.norm(chars)
         return [self.go] + [self.c2i[c] for c in chars] + [self.eos]
     
     def decode(self, ids):
