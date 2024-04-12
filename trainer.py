@@ -135,8 +135,8 @@ class Trainer():
               self.logger.log(info)
 
           if i % self.valid_every == 0:
-              val_loss = self.validate()
-              acc_full_seq, acc_per_char = self.precision(self.metrics)
+              val_loss,acc_full_seq, acc_per_char = self.validate()
+              #acc_full_seq, acc_per_char = self.precision(self.metrics)
 
               info = 'iter: {:06d} - valid loss: {:.3f} - acc full seq: {:.4f} - acc per char: {:.4f}'.format(i, val_loss, acc_full_seq, acc_per_char)
               print(info)
@@ -176,7 +176,8 @@ class Trainer():
         self.model.eval()
 
         total_loss = []
-        
+        pred_sents = []
+        actual_sents = []
         with torch.no_grad():
             for step, batch in enumerate(tqdm(self.valid_gen,total=len(self.valid_gen))):
                 batch = self.batch_to_device(batch)
@@ -184,11 +185,18 @@ class Trainer():
 
                 outputs = self.model(img, tgt_input)
 #                loss = self.criterion(rearrange(outputs, 'b t v -> (b t) v'), rearrange(tgt_output, 'b o -> (b o)'))
-               
+
                 outputs = outputs.flatten(0,1)
                 tgt_output = tgt_output.flatten()
                 loss = self.criterion(outputs, tgt_output)
 
+                translated_sentence, prob = translate(batch['img'], self.model)
+
+                pred_sent = self.vocab.batch_decode(translated_sentence.tolist())
+                actual_sent = self.vocab.batch_decode(batch['tgt_output'].tolist())
+
+                pred_sents.extend(pred_sent)
+                actual_sents.extend(actual_sent)
                 total_loss.append(loss.item())
                 
                 del outputs
@@ -196,8 +204,9 @@ class Trainer():
 
         total_loss = np.mean(total_loss)
         self.model.train()
-        
-        return total_loss
+        acc_full_seq = compute_accuracy(actual_sents, pred_sents, mode='full_sequence')
+        acc_per_char = compute_accuracy(actual_sents, pred_sents, mode='per_char')
+        return total_loss,acc_full_seq, acc_per_char
     
     def predict(self, sample=None):
         pred_sents = []

@@ -37,15 +37,15 @@ dataset:
     # name of your dataset
     name: data
     # path to annotation and image
-    data_root: /content/content/ocr_dataset/en_00
-    train_annotation: /content/content/ocr_dataset/en_00_labels.csv
+    data_root: /content/ocr_dataset/en_00
+    train_annotation: /content/ocr_dataset/en_00_labels.csv
     valid_annotation: null
     image_height: 64
     image_min_width: 64
-    image_max_width: 512
+    image_max_width: 484
 
 dataloader:
-    num_workers: 16
+    num_workers: 2
     pin_memory: True
 
 aug:
