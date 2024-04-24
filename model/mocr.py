@@ -1,5 +1,5 @@
 from model.image_encoder import Image_Encoder
-from model.transformer import Seq2Seq
+from mocr.model.transformer_old import Seq2Seq
 from torch import nn
 
 class MOCR(nn.Module):
