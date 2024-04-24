@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from model.mocr import MOCR
 from model.vocab import Vocab
@@ -103,8 +104,6 @@ def build_model(config):
     model = model.to(device)
 
     return model, vocab
-import os
-
 
 class Logger():
     def __init__(self, fname):

@@ -1,0 +1,60 @@
+# change to list chars of your dataset or use default vietnamese chars
+vocab: 'aAàÀảẢãÃáÁāĀạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬbBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊjJkKlLmMnNoöÖOòÒỏỎõÕóōÓŌọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStTuUüÜùÙủỦũŨūŪúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789!"#$€%&™°²''()*+,-.—/:;<=>?@[\]^_`{|}~ '
+
+# cpu, cuda, cuda:0
+device: cpu
+
+image_encoder:
+    hidden_dim: 512
+    pretrained: True
+    drop_out: 0.15
+seq_modeling: seq2seq
+transformer:
+    encoder_hidden: 512
+    decoder_hidden: 512
+    img_channel: 512
+    decoder_embedded: 512
+    dropout: 0.15
+
+optimizer:
+    max_lr: 0.001
+    pct_start: 0.1
+pretrain: ./weights/transformerocr_new.pth
+trainer:
+    batch_size: 32
+    print_every: 1
+    valid_every: 1
+    checkpoint_every: 20
+    iters: 1000
+    # where to save our model for prediction
+    export: ./weights/mocr.pth
+    checkpoint: ./checkpoint/transformerocr_checkpoint.pth
+    log: ./train.log
+    # null to disable compuate accuracy, or change to number of sample to enable validiation while training
+    metrics: null
+
+dataset:    
+    # name of your dataset
+    name: vi_00
+    # path to annotation and image
+    data_root: /content/ocr_dataset/vi_00
+    train_annotation: /content/ocr_dataset/vi_00_labels.csv
+    valid_annotation: null
+    image_height: 64
+    image_min_width: 64
+    image_max_width: 484
+
+dataloader:
+    num_workers: 2
+    pin_memory: True
+
+aug:
+    image_aug: True
+    masked_language_model: True
+
+predictor:
+    # disable or enable beamsearch while prediction, use beamsearch will be slower
+    beamsearch: False
+    weights: ./weights/mocr.pth
+quiet: False 
+split: True

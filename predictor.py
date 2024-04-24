@@ -1,5 +1,7 @@
 import torch
 from collections import defaultdict
+from config import Cfg
+from model.vocab import Vocab
 from translate import build_model, translate, translate_beam_search, process_input, predict
 class Predictor():
     def __init__(self, config):
@@ -79,3 +81,15 @@ class Predictor():
             return sents, probs
         else: 
             return sents
+        
+class Model_OCR:
+    def __init__(self,config_path):
+        config = Cfg.load_config_from_file(config_path)
+        self.detector = Predictor(config)
+        #self.vocab = Vocab(config['vocab'])
+    def predict(self,img,return_pro=False):
+        text, p = self.detector.predict(img,return_prob=True)
+        #text = self.vocab.decode(txt)
+        if return_pro:
+            return text,p
+        return text
