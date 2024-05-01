@@ -5,27 +5,21 @@ from model.layers.moe_layer import MoEConv, MoEBase
 
 
 class VGG(MoEBase):
-    def __init__(self, cfgs, batch_norm, num_classes=10, n_expert=5, ratio=1.0):
+    def __init__(self, cfgs, batch_norm, hidden_dim=256, n_expert=5, ratio=1.0):
         super(VGG, self).__init__()
         self.cfgs = cfgs
         self.features = self.make_layers(MoEConv, n_expert, ratio, batch_norm=batch_norm)
         last_conv_channels_len = [i for i in cfgs if isinstance(i, int)][-1]
-        self.avgpool = nn.AdaptiveAvgPool2d((2, 2))
-        self.classifier = nn.Sequential(
-            nn.Linear(int(last_conv_channels_len * ratio) * 2 * 2, 256),
-            nn.ReLU(True),
-            nn.Linear(256, 256),
-            nn.ReLU(True),
-            nn.Linear(256, num_classes),
-        )
+        self.conv_1x1 = nn.Conv2d(int(last_conv_channels_len * ratio), hidden_dim, 1)
+
 
     def forward(self, x):
         if self.router is not None:
             self.set_score(self.router(x))
         x = self.features(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
+        x = self.conv_1x1(x)
+        x = x.flatten(2)
+        x = x.permute(0,2,1)
         return x
 
     def make_layers(self, conv_layer, n_expert, ratio, batch_norm=True):
